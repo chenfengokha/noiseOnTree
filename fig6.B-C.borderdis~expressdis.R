@@ -57,15 +57,6 @@ nodeexp <- mclapply(mc.cores = 20,1:n, function(x){
 }) %>% rbind.fill()
 internodeexp <- internodeexp %>% rbind(nodeexp)
 save(internodeexp,file = "~/lineagepaper/06.fig6.allmotherexpress.Rdata")
-##
-# lapply(1:length(nodeexp), function(x){
-#   if(is.null(nrow(nodeexp[[x]]))){
-#     a <- data.frame(x,type=0)
-#   } else{
-#     a <- data.frame(x,type=1)
-#   }
-#   a
-# }) %>% rbind.fill() %>% dplyr::filter(type==0)
 
 ###
 #inter1 <- tmp %>% dplyr::filter(treedepth==12)
@@ -91,9 +82,6 @@ save(internodeexp,file = "~/lineagepaper/06.fig6.allmotherexpress.Rdata")
 # sonexpraw <- merge(sonexp2, sonexp1, by = "gene",all = T)
 # sonexpzhishu <- merge((internodeexp[,-1] %>% dplyr::filter(intnode %in% son$node) %>%
 #                          reshape2::dcast(gene~intnode,value.var="exp2")), sonexp1, by = "gene",all = T)
-
-
-
 sonexp1$exp2 <- 2^sonexp1[,2]-1
 names(sonexp1)[2] <- "exp1"
 sonexp1 %>% cbind(intnode=int,depth=unique(inter1$treedepth)) -> nodeexp
@@ -113,35 +101,7 @@ lapply(1:nrow(sonexp1), function(y){
   c
 }) %>% rbind.fill() %>% cbind(intnode=int,depth=unique(inter1$treedepth)) -> nodeexp
 
-
-
-##
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##3)border distance with mean using 492 saturated genes
+##2)border distance with mean using 492 saturated genes
 load("~/lineagepaper/06.fig6.allmotherexpress.Rdata")
 load("~/lineagepaper/06.gene_slope.all.mean0.1.Rdata")
 gene_slope %>% dplyr::filter(seg_lm<0.05) -> gene_slope
@@ -153,14 +113,9 @@ tree <- as_tibble(mytree)
 tree2 <- tree %>% as.data.frame()
 tmp$node1 <- tree2$label[match(tmp$a,tree2$node)]
 tmp$node2 <- tree2$label[match(tmp$b,tree2$node)]
-
-
 exp <- readRDS("/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/m54061_190813_092847/comprehen_SCOREandUMI_results_with_filter/adjust_filterMt10_comSCOREandUMI.oneCell.exp.Rds") %>% as.data.frame()
-
 exp <- exp[(rownames(exp) %in% gene_slope$gene),]
-
 exp$mean <- apply(exp[,1:ncol(exp)],1,mean) %>% as.numeric()
-
 exp$ma <- apply(exp[,1:(ncol(exp)-2)], 1, max)
 lowbottom <- min(exp$mean)
 
@@ -168,7 +123,6 @@ exp11 <- exp[,c(874:875)] %>% arrange(mean)
 exp11$gene <- rownames(exp11)
 seqexpmean <- seq(1,492,by=25)[1:10]
 internodeexp$mean <- exp11$mean[match(internodeexp$gene,rownames(exp11))]
-
 
 seqbor <- mclapply(mc.cores = 3,1:length(seqexpmean),function(y){
   interexp1 <- internodeexp %>% dplyr::filter(mean >= exp11$mean[seqexpmean[y]])
@@ -182,7 +136,6 @@ seqbor <- mclapply(mc.cores = 3,1:length(seqexpmean),function(y){
       expressa <- exptmp1[,which(colnames(exptmp1)==tmp1$node1)] %>% as.numeric()
       expressb <- exptmp1[,which(colnames(exptmp1)==tmp1$node2)] %>% as.numeric()
       tmp3 <- sum(abs(expressa-expressb)^2)^0.5
-
       data.frame(expdis=tmp3) %>% cbind(tmp1[,c(6:7)])
     }) %>% rbind.fill() %>% group_by(treedepth,internode) %>%
       dplyr::summarize(me=mean(expdis),.groups = 'drop')
@@ -194,10 +147,8 @@ seqbor <- mclapply(mc.cores = 3,1:length(seqexpmean),function(y){
         dplyr::filter(!is.na(exp1)) %>%
         group_by(gene) %>%
         dplyr::mutate(bordistoma=abs(exp1-ma))
-
       ma <- allexp$bordistoma
       bordistancetoma <- 10^(sum(log(ma+lowbottom,10))/length(ma))
-
       data.frame(bordistancetoma) %>% cbind(a %>% as.data.frame())
     }) %>% rbind.fill()
     # ##2) border distance ~ expression distance, 492 genes
@@ -212,27 +163,14 @@ seqbor <- mclapply(mc.cores = 3,1:length(seqexpmean),function(y){
     #   scale_x_continuous(limits = c(1.8,2.127))+
     #   #labs(x="to max border",y="pairwise expression distance",title = paste("rho = ",round(as.numeric(t2$estimate),3),"P = ",round(as.numeric(t2$p.value),3)))+
     #   style.print()
-
     t1 <- cor.test(bordis$bordistancetoma,bordis$me,method = "s")
     data.frame(arho=as.numeric(t1$estimate),ap=t1$p.value,type=y,stringsAsFactors = F)
   }) %>% rbind.fill()
-
 }) %>% rbind.fill()
 save(seqbor,file = "~/lineagepaper/06.seqbor.492genes.10part.1000.Rdata")
-load("~/lineagepaper/06.seqbor.492genes.10part.1000.Rdata")
-picdata <- seqbor
-
-picdata1 <- picdata %>% group_by(type) %>%
-  dplyr::summarize(me=mean(arho),se=sd(arho))
-source("~/Rfunction/style.print.R")
-ggplot(picdata1,aes(x=type,y=me))+geom_bar(stat= 'identity',fill="grey")+
-  geom_errorbar(aes(ymax=me+se,ymin=me-se),width=0.4)+
-  labs(x="Percentage of top expression genes",y=paste(expression(ρ),"(expression distance ~ border distance)"))+
-  style.print()
 
 
-
-#4)mother-border-distance ~ son-mean of pairwise distance, simulation
+#3)mother-border-distance ~ son-mean of pairwise distance, simulation
 ##mother express random 1000
 exp <- readRDS("/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/m54061_190813_092847/comprehen_SCOREandUMI_results_with_filter/adjust_filterMt10_comSCOREandUMI.oneCell.exp.Rds") %>% as.data.frame()
 cyclegene <- read.table("/mnt/data/home/lzz/project/2020-6-18-IVDD_scRNA/material/cell_cycle_vignette_files/regev_lab_cell_cycle_genes.txt")
@@ -277,19 +215,15 @@ nodeexp <- mclapply(mc.cores = 1,1:n, function(x){
 
 })
 
-
 aa <- lapply(1:length(nodeexp), function(x){
   nodeexp[[x]]
 }) %>% rbind.fill()
-
-
 
 internodeexp <- internodeexp %>% rbind(aa)
 save(internodeexp,file = "~/lineagepaper/06.fig6.allmotherexpress.1000.Rdata")
 
 
-##4.1)border distance with mean
-
+##4.1)border distance and expression distance using simulation data
 load("~/lineagepaper/06.fig6.allmotherexpress.1000.Rdata")
 load("~/lineagepaper/06.gene_slope.all.mean0.1.Rdata")
 gene_slope %>% dplyr::filter(seg_lm<0.05) -> gene_slope
@@ -356,16 +290,8 @@ seqbor1 <- mclapply(mc.cores = 1,1:10,function(i){
   
 }) %>% rbind.fill()
 save(seqbor1,file = "~/lineagepaper/06.fig6.seqbor.492.sample1000.Rdata") 
-seqbor1$i <- factor(seqbor1$i,levels = c(10:1))
-source("~/Rfunction/style.print.R")
-seqbor1 %>% ggplot(aes(x=i,y=rho,group=i))+geom_violin()+
-  geom_boxplot(width = 0.1, outlier.colour = NA)+
-  style.print()
-# 
-# zz <- lapply(1:1000, function(x){
-#   aa[[x]]
-# }) %>% rbind.fill()
 
+##draw picture 3c
 load("~/lineagepaper/06.seqbor.492genes.10part.1000.Rdata")
 load("~/lineagepaper/06.fig6.seqbor.492.sample1000.Rdata")
 seqbor %>% group_by(type) %>% dplyr::summarize(mean=mean(arho),sd=sd(arho)) -> seqbor0
