@@ -114,34 +114,7 @@ lapply(1:nrow(sonexp1), function(y){
 }) %>% rbind.fill() %>% cbind(intnode=int,depth=unique(inter1$treedepth)) -> nodeexp
 
 
-
-##
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##3)border distance with mean using 492 saturated genes
+##2)border distance with mean using 492 saturated genes
 load("~/lineagepaper/06.fig6.allmotherexpress.Rdata")
 load("~/lineagepaper/06.gene_slope.all.mean0.1.Rdata")
 gene_slope %>% dplyr::filter(seg_lm<0.05) -> gene_slope
@@ -219,20 +192,8 @@ seqbor <- mclapply(mc.cores = 3,1:length(seqexpmean),function(y){
 
 }) %>% rbind.fill()
 save(seqbor,file = "~/lineagepaper/06.seqbor.492genes.10part.1000.Rdata")
-load("~/lineagepaper/06.seqbor.492genes.10part.1000.Rdata")
-picdata <- seqbor
 
-picdata1 <- picdata %>% group_by(type) %>%
-  dplyr::summarize(me=mean(arho),se=sd(arho))
-source("~/Rfunction/style.print.R")
-ggplot(picdata1,aes(x=type,y=me))+geom_bar(stat= 'identity',fill="grey")+
-  geom_errorbar(aes(ymax=me+se,ymin=me-se),width=0.4)+
-  labs(x="Percentage of top expression genes",y=paste(expression(ρ),"(expression distance ~ border distance)"))+
-  style.print()
-
-
-
-#4)mother-border-distance ~ son-mean of pairwise distance, simulation
+#3)mother-border-distance ~ son-mean of pairwise distance, simulation
 ##mother express random 1000
 exp <- readRDS("/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/m54061_190813_092847/comprehen_SCOREandUMI_results_with_filter/adjust_filterMt10_comSCOREandUMI.oneCell.exp.Rds") %>% as.data.frame()
 cyclegene <- read.table("/mnt/data/home/lzz/project/2020-6-18-IVDD_scRNA/material/cell_cycle_vignette_files/regev_lab_cell_cycle_genes.txt")
@@ -276,20 +237,14 @@ nodeexp <- mclapply(mc.cores = 1,1:n, function(x){
   }) %>% rbind.fill()
 
 })
-
-
 aa <- lapply(1:length(nodeexp), function(x){
   nodeexp[[x]]
 }) %>% rbind.fill()
 
-
-
 internodeexp <- internodeexp %>% rbind(aa)
 save(internodeexp,file = "~/lineagepaper/06.fig6.allmotherexpress.1000.Rdata")
 
-
-##4.1)border distance with mean
-
+##4.1)border distance with expdis
 load("~/lineagepaper/06.fig6.allmotherexpress.1000.Rdata")
 load("~/lineagepaper/06.gene_slope.all.mean0.1.Rdata")
 gene_slope %>% dplyr::filter(seg_lm<0.05) -> gene_slope
@@ -356,16 +311,8 @@ seqbor1 <- mclapply(mc.cores = 1,1:10,function(i){
   
 }) %>% rbind.fill()
 save(seqbor1,file = "~/lineagepaper/06.fig6.seqbor.492.sample1000.Rdata") 
-seqbor1$i <- factor(seqbor1$i,levels = c(10:1))
-source("~/Rfunction/style.print.R")
-seqbor1 %>% ggplot(aes(x=i,y=rho,group=i))+geom_violin()+
-  geom_boxplot(width = 0.1, outlier.colour = NA)+
-  style.print()
-# 
-# zz <- lapply(1:1000, function(x){
-#   aa[[x]]
-# }) %>% rbind.fill()
 
+##draw picture
 load("~/lineagepaper/06.seqbor.492genes.10part.1000.Rdata")
 load("~/lineagepaper/06.fig6.seqbor.492.sample1000.Rdata")
 seqbor %>% group_by(type) %>% dplyr::summarize(mean=mean(arho),sd=sd(arho)) -> seqbor0
