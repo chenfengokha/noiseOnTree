@@ -1,0 +1,51 @@
+## input raw files
+raw_subreads_path: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/rawdata/PB/subreads/bc1009_BAK8A_OA"
+
+## output directory
+outDir: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results"
+
+# align reference index
+bowtie_index: "/mnt/data/home/lzz/reference/human/hg19/bowtie2_index/hg19"
+
+# call edit events reference
+ref_seq: "/mnt/data/home/lzz/project/Reconstruct_lineage/reference/new0529_P2+P4_reference.txt"
+tarPos: "/mnt/data/home/lzz/project/Reconstruct_lineage/reference/targetPosition_0529_P2+P4.txt"
+iqtree_transMatrix: "/mnt/data/home/lzz/project/Reconstruct_lineage/reference/transMatrix.txt"
+# filter BC base on 10x cellranger results
+#filterBC: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/material/sampleE.filterBC.txt"
+
+# python scripts path
+split_strand: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/1.raw_subread_split_strand_PacBio.py"
+HigQulCCS: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/2.getOnly1CCS_PacBio.py"
+FilterCCS: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/3.filterAndExtractBCUMI_CCS_PacBio.py"
+#MergeR1R2CCS: "/mnt/data/home/lzz/project/2020-9-22-CBRA_lung_scRNA-seq/scripts/python/4.1.MergeR1R2other_filterCCS_PacBio.py"
+MergeR1R2CCS: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/PacBio_Analysis_scripts/4.MergeR1R2_filterCCS_PacBio.py"
+AdjustBC: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/PacBio_Analysis_scripts/adjustBCandUMI_PacBio.py"
+BCumi_con: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/5.GetConsensusSeqFromCCS_PacBio.py"
+Align_toRef: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/6.Muscle_align_mutipleCPU_PacBio.py"
+Call_Events: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/7.1.alignFASTA_to_Events_single_V2.1_multicore_keepZWcount_PacBio.py"
+BC_conEvents: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/PacBio_Analysis_scripts/8.4.Get_consensus_Events_BC_comprehen_UMIandSCORE_with_filterBC.py"
+Events_toIqtreeInput: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/9.Events_to_IQtree_input_single_PacBio.py"
+Run_Iqtree: "/mnt/data/home/lzz/project/2019-10-22-PacBio.SampleE/scripts/PacBio_Analysis_scripts/10.runIQtree_ntAUTO_V1.0_PacBio.py"
+
+
+# add stastics
+stainfo: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/Python_scripts/add1.Analysis_some_statistics_results_from_alleleInfo.py"
+plotSta: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/R_scripts/R_commanline_scripts/plot_some_stastics.R"
+plotTOP100Edits: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/R_scripts/R_commanline_scripts/plot_TOP100_edit_and_fre.R"
+plotEditLine: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/R_scripts/R_commanline_scripts/plot_edit_fre_line.R"
+plotAllEdits: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/R_scripts/R_commanline_scripts/plot_all_edits_only.R"
+plotTreeANDnodeCellNum: "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/scripts/R_scripts/R_commanline_scripts/plot_tree_cellnum.R"
+
+
+
+## some parameters
+# parameters
+P2: "TGCTGCCCTCTGGTTATGTG"
+P4: "AGATCGGAAGAGCGTCGTGTAG"
+inFP: "TCTATACGATCCGGACCTC"
+inRP: "ATTCAGAGCAGTGCTCG"
+primerMismatch: 2
+polyAwindowSize: 12
+polyAmismatch: 3
+ref_len: 448
