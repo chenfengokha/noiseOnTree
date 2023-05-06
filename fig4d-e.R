@@ -423,9 +423,6 @@ samp2 %>% as.data.frame() %>% cbind(type="Sample 2") %>%
   style.print()
 
 #fig4e
-
-testtmp <- readRDS("/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/new_CF2_sampleA_OU/sampleAandCF2_OUenrich_cut_by_expANDvars_9999.Rds")%>% dplyr::filter(cutoff %in% c("0.5","0.2"))
-
 testdata1 <- readRDS("~/project/293Tcelllineagetree/rev/fig4d-e/sampleA_OUenrich_cut_by_expANDalpha_selectGene1_sim1000_raw.Rds")
 testdata2 <- readRDS("~/project/293Tcelllineagetree/rev/fig4d-e/CF2_OUenrich_cut_by_expANDalpha_selectGene1_sim1000_raw.Rds")
 
@@ -445,9 +442,4 @@ ggplot(data=testdata,aes(x=exp.ratio,y=m,linetype=cutoff,colour=sample.name,grou
   geom_errorbar(position=position_dodge(width=0.5),aes(ymax=m+sd,ymin=m-sd))+
   scale_shape_manual(values = c(1,2))+
   style.print()
-
-
-
-
-
 
