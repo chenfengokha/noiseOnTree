@@ -269,7 +269,29 @@ ACcv %>% group_by(s1cv) %>% dplyr::summarize(m=mean(cv2),se=sd(cv2)/(length(cv2)
   labs(x="CV of genes in sample 1",y="CV of genes in sample 2")+style.print()
 cor.test(ACcv$cvA,ACcv$cv2,method = "p")$p.value
 
+##4)figs8a
+hlife <- read.table("~/10xbarcodetest/sampleA/GSE49831_HEK293_halflives.txt",header = T,stringsAsFactors = F)
+hlife$time <- (0.5*(hlife[,1]+hlife[,2]))/60
 
+AC$hlife <- hlife$time[match(AC$gene,rownames(hlife))]
+
+AC <- AC %>% dplyr::filter(!is.na(hlife))
+aa <- AC[,c(2,8)]
+names(aa)[1] <- "mybreak"
+bb <- AC[,c(7,8)]
+names(bb)[1] <- "mybreak"
+cc <- rbind(aa ,bb)
+
+cor.test(cc$hlife,cc$mybreak,method = "s")
+cc$mybreak <- as.character(cc$mybreak)
+cc %>% group_by(mybreak) %>% dplyr::summarize(m=mean(hlife),se=sd(hlife)/(length(hlife)^0.5)) %>%
+  ggplot(aes(mybreak,m)) +
+  geom_point() +
+  geom_errorbar(aes(ymax=m+se,ymin=m-se),width=0.5)+
+  geom_smooth(method = "lm",se = FALSE)+
+  scale_y_continuous(breaks = c(1.4,1.8,2.2))+
+  labs(x="Saturated divergence time",y="Half-life (hour)")+
+  style.print()
 
 
 
