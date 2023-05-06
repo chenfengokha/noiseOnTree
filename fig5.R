@@ -1,4 +1,4 @@
-##pic cor
+##pic.cor
 
 library(dplyr)
 library(parallel)
@@ -73,7 +73,7 @@ saveRDS(part1.cor,
         file = paste0(result_dir, "PIC/newsample1_oneCell_picCor_info.Rds"))
 
 
-##original cor
+##original.cor
 library(dplyr)
 library(parallel)
 
