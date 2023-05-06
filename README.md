@@ -1,3 +1,11 @@
 # noiseOnTree
 
-This repository contains core codes for our paper on “A high-density lineage tree reveals dynamics of expression differences accumulation in nondifferentiating clonal expansion”. Details of main R and Python codes are arranging and will be uploaded soon.
+This repository contains core codes for our paper on “Phylogenetic comparative analysis of single-cell transcriptomes reveals constrained accumulation of gene expression heterogeneity during clonal expansion”. 
+
+1. For lineage tree construction through raw reads of PacBio, please go to PacBio_Analysis_scripts and PacBio_analysis_pipeline files.
+1) For automatic running, please go to PacBio_analysis_pipeline files. 
+2) For manual running, please go to PacBio_Analysis_scripts files. 
+Using "python [name of the script] -h" to viewer the helpfile for each script.
+
+2.
+
