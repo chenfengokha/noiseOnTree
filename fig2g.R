@@ -110,9 +110,9 @@ testres <- lapply(1:1000, function(i){
   aa <- newdepth.exp
   aa$treedepth[which(aa$treedepth>10)] <- 10
   aa <- aa %>% group_by(treedepth,internode) %>%
-    dplyr::summarize(dis1=mean(expdis),R1=mean(expR)) %>%
+    dplyr::summarize(dis1=mean(expdis)) %>%
     group_by(treedepth) %>%
-    dplyr::summarize(dis2=median(dis1)/mean(aa$expdis),R2=median(R1)/mean(aa$expR)) %>%
+    dplyr::summarize(dis2=median(dis1)/mean(aa$expdis)) %>%
     as.data.frame()
   
   #1)depth-expdis(Euclidean distance)
@@ -122,18 +122,11 @@ testres <- lapply(1:1000, function(i){
   xxd <- -treedepth
   
   t1 <- summary(segmented(od,seg.Z=~xxd,psi=list(xxd=-3)))
-  #1)depth-expdis(Euclidean distance)
   
-  meR <- aa$R2
-  oR <-lm(meR~1)
-  xxR <- -treedepth
   
-  tR <- summary(segmented(oR,seg.Z=~xxR,psi=list(xxR=-3)))
-  
-  data.frame(mybreakD=abs(t1$psi[1,2]),sebreakD=t1$psi[1,3],i,mybreakR=abs(tR$psi[1,2]),sebreakR=tR$psi[1,3],stringsAsFactors = F)
+  data.frame(mybreakD=abs(t1$psi[1,2]),sebreakD=t1$psi[1,3],i,stringsAsFactors = F)
   
 }) %>% rbind.fill()
 
 
-save(testres,file = "~/project/293Tcelllineagetree/data.01.testres.Rdata")
-
+save(testres,file = "~/project/293Tcelllineagetree/data.01.testres1.Rdata")
