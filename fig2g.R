@@ -128,5 +128,4 @@ testres <- lapply(1:1000, function(i){
   
 }) %>% rbind.fill()
 
-
 save(testres,file = "~/project/293Tcelllineagetree/data.01.testres1.Rdata")
