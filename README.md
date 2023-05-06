@@ -1,6 +1,6 @@
 # noiseOnTree
 
-This repository contains core codes for our paper on “Phylogenetic comparative analysis of single-cell transcriptomes reveals constrained accumulation of gene expression heterogeneity during clonal expansion”, as well as the processed data to facilitate direct reproduction of main figures. Please refer to our paper for the detailed explanation of the variables appeared in the codes.
+This repository contains core codes for our paper on “Phylogenetic comparative analysis of single-cell transcriptomes reveals constrained accumulation of gene expression heterogeneity during clonal expansion”, as well as the processed data to facilitate direct reproduction of main figures. For detail information, please see our paper or directly email to me.
 
 1.For lineage tree construction through raw reads of PacBio, please go to PacBio_Analysis_scripts and PacBio_analysis_pipeline files.
 
