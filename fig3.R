@@ -22,8 +22,6 @@ check.mean.dist.nor.perGene <- function(raw.dist.df, ran.dist){
   
 }
 
-
-
 test.fit.gene <- function(raw.depth.exp.dist, depth.cut = NULL, test.psi = -3){
   # test fit segment
   test.df <- raw.depth.exp.dist
@@ -172,19 +170,14 @@ test.fit.gene <- function(raw.depth.exp.dist, depth.cut = NULL, test.psi = -3){
   return(re.df)
 }
 
-
 ## ============= save and load vars =================
 #pair.dist.path1 <- "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/new_samples_include10x_adjust_results/rawBC/CF2/CF2_perGene_pair_dist.Rds"
 pair.dist.path1 <- "/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/sampleABC_re_saturation_results/sampleABC_exp_saturation/sampleA/sampleA_perGene_pair_dist.Rds" 
 
-
 pergene.dist.df <- readRDS(pair.dist.path1)
 #pergene.dist.df <- pergene.dist.df %>% dplyr::select(-exp.dist)
 
-# tmp <- data.frame(stringsAsFactors = F,psi=rep(-(3:6),rep(5,4)),depth.cut=rep(c(7:10,15),4))
-# y=7
 tmp1 <- data.frame(stringsAsFactors = F,psi=-4,depth.cut=8)
-
 
 tmp2 <- mclapply(mc.cores = 10,1:20,function(i){
   pergene.fit.df <- 
