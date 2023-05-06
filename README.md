@@ -9,5 +9,5 @@ For automatic running, please go to PacBio_analysis_pipeline files.
 For manual running, please go to PacBio_Analysis_scripts files. 
 Using "python [name of the script] -h" to viewer the helpfile for each script.
 
-2.
+2.11
 
