@@ -1,3 +1,4 @@
+#RNA velocity
 suppressMessages({
     library(velocyto.R);
     library(tidyverse);
@@ -251,4 +252,202 @@ select_gene.mdistVSangle <-
               angle.sd = sd(angle))
 
 a <- cor.test(select_gene.mdistVSangle$new.mrcaDist2boundary, select_gene.mdistVSangle$angle.mean, method = 'spearman')
+
+#OU
+suppressMessages({
+    library(parallel)
+    library(ouch)
+    library(ape)
+    library(lmtest)
+    library(dplyr)
+    library(ggplot2)
+    library(BiocGenerics)
+    library(reshape2)
+    library(tidyr)
+    library(DT)
+})
+
+test.enrich <- function(our.all.genes, our.genes, other.genes){
+  all.gene.num <- c(our.all.genes, other.genes) %>% unique() %>% length()
+  TP <- sum(other.genes %in% our.genes)
+  FP <- sum(!(other.genes %in% our.genes))
+  FN <- length(our.genes) - TP
+  TN <- all.gene.num - TP - FN - FP
+  phyper.re <- phyper(TP-1, TP+FN, FP+TN, TP+FP, lower.tail = F, log.p = F)
+  fc <- (TP*all.gene.num) / ((TP+FP)*(TP+FN))
+  chisq.re <- chisq.test(matrix(c(TP, FN, FP, TN), nrow = 2, ncol = 2))
+  return(data.frame(phyper.p = phyper.re,
+                    fc = fc,
+                    chisq.p = chisq.re$p.value))
+}
+
+
+enrich.expANDvar.rank.cut2 <- function(test.gene, all.df, exp.cutoff=NULL, 
+                               cutoffs=seq(0.1,1,0.1), cutoff.column="theta",cores=20){
+   all.df <- all.df %>% arrange(desc(exp.mean))
+  #all.df <- all.df[order(all.df$exp.mean, decreasing = T),]
+  if (!is.null(exp.cutoff)) {
+    use.all.df <- all.df[1:round(nrow(all.df) * (exp.cutoff)),]
+    test.gene <- test.gene[test.gene %in% use.all.df$gene]
+    all.sig.df <- use.all.df %>% filter(LR.p.adjust < 0.05)
+    
+  } else {
+    use.all.df <- all.df
+    all.sig.df <- all.df %>% filter(LR.p.adjust < 0.05)
+  }
+  all.sig.df <- all.sig.df %>% arrange(desc(!!sym(cutoff.column)))
+  #alpha.cutoffs <- seq(0,30,0.1)
+  testVSall <- mclapply(seq(length(cutoffs)), function(i){
+    use.cut <- cutoffs[i]
+    cut.ou.sig <- all.sig.df[1:round(nrow(all.sig.df)*use.cut),]
+    sig.gene <- cut.ou.sig$gene %>% unlist()
+    # all 
+    enrich.re <- test.enrich(our.all.genes = unlist(all.df$gene),
+                                 our.genes = sig.gene,
+                                 other.genes = test.gene)
+    #
+    return(data.frame(cutoff = use.cut,
+                      cut.var = cutoff.column,
+                      fc.enrich = enrich.re$fc,
+                      phyper.p = enrich.re$phyper.p,
+                      chisq.p = enrich.re$chisq.p,
+                      all.sig.num = length(sig.gene),
+                      stringsAsFactors = F))
+  }, mc.cores = cores) %>% bind_rows()
+  return(testVSall)
+}
+
+varsVSexpMean.enrich2 <- function(test.gene, all.df, 
+                                  exp.cut.vector=seq(0.1,1,0.1), 
+                                  cut.vector=seq(0.1,1,0.1), 
+                                  cut.vars = "theta",
+                                  cores=20){
+  alphaVSexp.cut.df <- lapply(seq(length(exp.cut.vector)), function(x){
+    exp.ratio <- exp.cut.vector[x]
+    sub.df <- enrich.expANDvar.rank.cut2(test.gene = test.gene,
+                            all.df = all.df,
+                            exp.cutoff = exp.ratio,
+                            cutoffs = cut.vector,
+                            cutoff.column = cut.vars,
+                            cores = cores)
+    sub.df$exp.ratio <- exp.ratio
+    return(sub.df)
+  }) %>% bind_rows()
+  return(alphaVSexp.cut.df)
+}
+
+all.gene.OUvsBW <-  readRDS("sample1_all_gene_OUvsBW.Rds")
+
+selectgene <- 
+    read.csv("/public/group/lizz/project/sampleA_results/1aaaa_final_fig4DE/use_genes.csv", sep=" ", stringsAsFactors = F)
+
+selectgene <- selectgene$gene %>% unlist()
+
+
+slelect1.alphaANDexp.cut.enrich2 <- 
+    varsVSexpMean.enrich2(test.gene = selectgene,
+                         all.df = all.gene.OUvsBW,
+                         exp.cut.vector = seq(0.1,1,0.05),
+                         cut.vector = seq(0.1,1,0.05),
+                         cut.vars = "alpha",
+                         cores = 40)
+
+varsVSexpMean.enrich2.sim <- 
+    function(test.gene, 
+             all.df, 
+             exp.cut.vector=seq(0.1,1,0.1), 
+             cut.vector=seq(0.1,1,0.1), 
+             cut.vars = "theta",
+             cores=20,
+             per.time = 1000
+             ){
+    alphaVSexp.cut.df <- lapply(seq(length(exp.cut.vector)), function(x){
+        exp.ratio <- exp.cut.vector[x]
+        per.df <- 
+            mclapply(mc.cores=80,seq(per.time), function(per){
+                per_all.df <- sample_frac(all.df,0.8, replace=F)
+                per_test.gene <- test.gene[test.gene %in% per_all.df$gene]
+                sub.df <- 
+                    enrich.expANDvar.rank.cut2(test.gene = per_test.gene,
+                                                all.df = per_all.df,
+                                                exp.cutoff = exp.ratio,
+                                                cutoffs = cut.vector,
+                                                cutoff.column = cut.vars,
+                                                cores = cores)
+                sub.df$exp.ratio <- exp.ratio
+                sub.df$times <- per
+                return(sub.df)
+            }) %>% bind_rows()
+        return(per.df)
+  }) %>% bind_rows()
+  return(alphaVSexp.cut.df)
+}
+
+slelect1.alphaANDexp.cut.enrich2.sim <- 
+    varsVSexpMean.enrich2.sim(test.gene = selectgene,
+                             all.df = all.gene.OUvsBW,
+                             exp.cut.vector = seq(0.1,1,0.05),
+                             cut.vector = seq(0.1,1,0.05),
+                             cut.vars = "alpha",
+                             cores = 2,
+                             per.time=1000)
+
+##########################
+##load data and plot
+#fig4d
+#sample1
+sampA <- readRDS("~/project/293Tcelllineagetree/rev/fig4d-e/sampleA_999_angle.Rds") %>% 
+  group_by(mrca,new.mrcaDist2boundary) %>% dplyr::summarize(m=mean(angle))
+#sample2
+samp2 <- readRDS("~/project/293Tcelllineagetree/rev/fig4d-e/CF2_999_angle.Rds") %>% 
+  group_by(mrca,new.mrcaDist2boundary) %>% dplyr::summarize(m=mean(angle))
+
+bordA <- readRDS("~/project/293Tcelllineagetree/plot/test/06.real.motherexp.Anew.bordis.Rds")
+bord2 <-  readRDS("~/project/293Tcelllineagetree/plot/test/06.real.motherexp.cf2new.bordis.Rds")
+
+sampA$newdis <- bordA$bordis[match(sampA$mrca,bordA$int)]
+samp2$newdis <- bord2$bordis[match(samp2$mrca,bord2$int)]
+
+sampA %>% as.data.frame() %>% cbind(type="Sample 1") %>%
+  #%>% rbind(samp2 %>% as.data.frame() %>% cbind(type="Sample 2")) %>%
+  ggplot(aes(newdis,m))+
+  geom_point(alpha=0.5,color="#F8766D")+
+  scale_y_continuous(limits = c(10,120),breaks = c(20,60,100))+
+  facet_grid(~type)+
+  style.print()
+samp2 %>% as.data.frame() %>% cbind(type="Sample 2") %>%
+  ggplot(aes(newdis,m))+
+  geom_point(alpha=0.5,color="#00BFC4")+
+  scale_y_continuous(limits = c(10,120),breaks = c(20,60,100))+
+  facet_grid(~type)+
+  style.print()
+
+#fig4e
+
+testtmp <- readRDS("/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/new_CF2_sampleA_OU/sampleAandCF2_OUenrich_cut_by_expANDvars_9999.Rds")%>% dplyr::filter(cutoff %in% c("0.5","0.2"))
+
+testdata1 <- readRDS("~/project/293Tcelllineagetree/rev/fig4d-e/sampleA_OUenrich_cut_by_expANDalpha_selectGene1_sim1000_raw.Rds")
+testdata2 <- readRDS("~/project/293Tcelllineagetree/rev/fig4d-e/CF2_OUenrich_cut_by_expANDalpha_selectGene1_sim1000_raw.Rds")
+
+testdata <- rbind(testdata1,testdata2) %>% dplyr::filter(cut.var=="alpha") %>% dplyr::filter(cutoff %in% c("0.5","0.2")) %>%
+  group_by(cutoff,exp.ratio,sample.name,cut.var) %>% dplyr::summarize(m=mean(fc.enrich),sd=1.96*sd(fc.enrich)) %>% 
+  dplyr::filter(exp.ratio %in% c((1:10)/10,"0.3","0.7"))
+
+testdata$cutoff <- as.character(testdata$cutoff)
+testdata$cutoff <- factor(testdata$cutoff,levels = c("0.5","0.2"))
+testdata$exp.ratio <- factor(testdata$exp.ratio,levels = as.character((20:1)/20))
+testdata$sample.name <- factor(testdata$sample.name,levels = c("sampleA","CF2"))
+
+ggplot(data=testdata,aes(x=exp.ratio,y=m,linetype=cutoff,colour=sample.name,group=paste(cutoff,sample.name)))+
+  geom_line(position=position_dodge(width=0.5))+
+  scale_y_continuous(limits = c(0.9,17),breaks = c(1,4,13),trans = "log2")+
+  geom_point(position=position_dodge(width=0.5),aes(fill="ptype"))+
+  geom_errorbar(position=position_dodge(width=0.5),aes(ymax=m+sd,ymin=m-sd))+
+  scale_shape_manual(values = c(1,2))+
+  style.print()
+
+
+
+
+
 
