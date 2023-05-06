@@ -207,3 +207,70 @@ tmp2 <- mclapply(mc.cores = 10,1:20,function(i){
 
 #saveRDS(tmp2,file="~/project/293Tcelllineagetree/rev/res.C.saturatedGene.all.Rds")
 saveRDS(tmp2,file="~/project/293Tcelllineagetree/rev/res.A.saturatedGene.all.Rds")
+
+##################################################
+##load data and plot
+##1)fig3A
+library(VennDiagram)
+A <- readRDS("~/project/293Tcelllineagetree/rev/res.A.saturatedGene.all.Rds") %>%
+  group_by(gene) %>% dplyr::filter(length(unique(round(mybreak)))==1) %>%
+  group_by(gene) %>% dplyr::summarize(mybreak1=round(mean(mybreak)),myh=mean(inter),mslope=mean(slope),slopP1=max(slopP),myinterP=max(interP)) %>%
+  dplyr::filter(slopP1<0.05 & myinterP<0.05 & gene!="exp.dist")
+
+C <- readRDS("~/project/293Tcelllineagetree/rev/res.C.saturatedGene.all.Rds") %>%
+  group_by(gene) %>% dplyr::filter(length(unique(round(mybreak)))==1) %>%
+  group_by(gene) %>% dplyr::summarize(mybreak1=round(mean(mybreak)),myh=mean(inter),mslope=mean(slope),slopP1=max(slopP),myinterP=max(interP)) %>%
+  dplyr::filter(slopP1<0.05 & myinterP<0.05 & gene!="exp.dist")
+
+venn.diagram(list(A=A$gene,C=C$gene),
+             filename=NULL,col=c("#F8766D", "#00BFC4"),
+             fill=c("#F8766D", "#00BFC4"),
+             cat.col=c("#F8766D", "#00BFC4"),reverse=TRUE) %>% grid.draw()
+phyper(length(intersect(A$gene,C$gene))-1,nrow(A),20136-nrow(A),nrow(C),lower.tail = F)
+
+##2)fig3B
+A$Cb <- C$mybreak1[match(A$gene,C$gene)]
+AC <- A %>% dplyr::filter(!is.na(Cb))
+AC %>% group_by(mybreak1) %>% dplyr::summarize(nn=mean(Cb),se=sd(Cb)/mean(Cb)) %>%
+  ggplot(aes(mybreak1,nn))+geom_point()+geom_errorbar(aes(ymax=nn+se,ymin=nn-se),width=0.5)+
+  geom_smooth(method = "lm",se = FALSE)+
+  style.print()
+cor.test(AC$mybreak1,AC$Cb,method = "p")
+
+##3)fig3c
+expA <- readRDS("~/project/293Tcelllineagetree/plot/test/adjust_filterMt10_comSCOREandUMI.oneCell.exp.Rds") %>% as.data.frame()
+expA$meanA <- apply(expA[,1:ncol(expA)],1,mean) %>% as.numeric()
+expA$sdA <- apply(expA[,1:(ncol(expA)-1)],1,sd) %>% as.numeric()
+expA$cvA <- expA$sdA/expA$meanA
+expA <- expA %>% arrange(meanA)
+expA$dmrunA <- expA$cvA-runmed(expA$cvA,101)
+expA$dmlowessA <- expA$cvA - (lowess(expA[,c((ncol(expA)-3),(ncol(expA)-1))]) %>% as.data.frame())$y
+expA$geneA <- rownames(expA)
+
+exp2 <- readRDS("~/project/293Tcelllineagetree/plot/test/CF2_oneCellexp.Rds") %>% as.data.frame()
+exp2$mean2 <- apply(exp2[,1:ncol(exp2)],1,mean) %>% as.numeric()
+exp2$sd2 <- apply(exp2[,1:(ncol(exp2)-1)],1,sd) %>% as.numeric()
+exp2$cv2 <- exp2$sd2/exp2$mean2
+exp2 <- exp2 %>% arrange(mean2)
+exp2$dmrun2 <- exp2$cv2-runmed(exp2$cv2,101)
+exp2$dmlowess2 <- exp2$cv2 - (lowess(exp2[,c((ncol(exp2)-3),(ncol(exp2)-1))]) %>% as.data.frame())$y
+exp2$gene2 <- rownames(exp2)
+
+mergedata <- merge(expA[,(ncol(expA)-5):ncol(expA)],exp2[,(ncol(exp2)-5):ncol(exp2)],by.x = "geneA",by.y = "gene2")
+
+ACcv <- mergedata %>% dplyr::filter(geneA %in% AC$gene) 
+ACcv$s1cv <- round(ACcv$cvA)
+ACcv %>% group_by(s1cv) %>% dplyr::summarize(m=mean(cv2),se=sd(cv2)/(length(cv2)^0.5)) %>%
+  dplyr::filter(s1cv<7) %>%
+  ggplot(aes(s1cv,m))+
+  geom_point()+ geom_errorbar(aes(ymax=m+se,ymin=m-se),width=0.3)+
+  geom_smooth(method = "lm",se = FALSE)+
+  scale_y_continuous(breaks = c(2,5,8))+
+  labs(x="CV of genes in sample 1",y="CV of genes in sample 2")+style.print()
+cor.test(ACcv$cvA,ACcv$cv2,method = "p")$p.value
+
+
+
+
+
+
