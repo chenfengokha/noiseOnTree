@@ -235,3 +235,51 @@ seqbor1 <- mclapply(mc.cores = 1,1:10,function(i){
 }) %>% rbind.fill()
 #saveRDS(seqbor1,file = "~/project/293Tcelllineagetree/plot/test/06.random.cor.A.boddisandexpdis.Rds") 
 saveRDS(seqbor1,file = "~/project/293Tcelllineagetree/plot/test/06.random.cor.cf2.boddisandexpdis.Rds") 
+
+###########################################
+##fig4.B
+#sample1
+sampA <- readRDS("~/project/293Tcelllineagetree/plot/test/06.real.all.cor.A.boddisandexpdis.Rds") %>%
+  group_by(int,bordis) %>%
+  dplyr::summarize(m=mean(expdis)) %>% as.data.frame()
+#sample2
+samp2 <- readRDS("~/project/293Tcelllineagetree/plot/test/06.real.all.cor.cf2.boddisandexpdis.Rds") %>%
+  group_by(int,bordis) %>%
+  dplyr::summarize(m=mean(expdis)) %>% as.data.frame()
+bordA <- readRDS("~/project/293Tcelllineagetree/plot/test/06.real.motherexp.Anew.bordis.Rds")
+bord2 <-  readRDS("~/project/293Tcelllineagetree/plot/test/06.real.motherexp.cf2new.bordis.Rds")
+
+sampA$newdis <- bordA$bordis[match(sampA$int,bordA$int)]
+samp2$newdis <- bord2$bordis[match(samp2$int,bord2$int)]
+cor.test(sampA$newdis,sampA$m,method = "s")$p.value
+cor.test(samp2$newdis,samp2$m,method = "s")$p.value
+
+ggplot()+
+  geom_point(data=sampA,aes(newdis,m),alpha=0.5,color="#F8766D") +style.print()
+ggplot()+  
+  geom_point(data=samp2,aes(newdis,m),alpha=0.5,color="#00BFC4") +
+  style.print()
+##fig4.c
+#sample1
+realA <- readRDS("~/project/293Tcelllineagetree/plot/test/06.real.cor.A.boddisandexpdis.Rds") %>% group_by(i) %>% dplyr::summarize(mean=mean(rho),sd=sd(rho))
+ranA <- readRDS("~/project/293Tcelllineagetree/plot/test/06.random.cor.A.boddisandexpdis.Rds")
+#sample2
+realcf2 <- readRDS("~/project/293Tcelllineagetree/plot/test/06.real.cor.cf2.boddisandexpdis.Rds") %>% group_by(i) %>% dplyr::summarize(mean=mean(rho),sd=sd(rho))
+rancf2 <- readRDS("~/project/293Tcelllineagetree/plot/test/06.random.cor.cf2.boddisandexpdis.Rds")
+
+real <- rbind(cbind(realA,type2="A"),cbind(realcf2,type2="cf2")) %>% dplyr::filter(i!=10)
+real$i <- factor(real$i,levels = as.character(1:9))
+ran <- rbind(cbind(ranA,type2="A"),cbind(rancf2,type2="cf2")) %>% dplyr::filter(i!=10)
+
+ran$i <- factor(ran$i,levels = as.character(1:9))
+
+ggplot()+
+  geom_point(data = real,aes(x=i,y=mean,color=type2,group=type2))+
+  geom_errorbar(data=real,aes(x=i,y=mean,ymin=mean-sd,ymax=mean+sd,color=type2,group=type2), width = 0.25)+
+  geom_violin(data = ran,aes(x=i,y=rho,color=type2),width=0.8)+
+  geom_boxplot(data = ran,aes(x=i,y=rho,color=type2),width=0.4, outlier.colour = NA)+
+  scale_y_continuous(limits = c(-0.2,0.95),breaks = c(0,0.4,0.8))+
+  style.print()
+
+
+
