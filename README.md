@@ -7,7 +7,7 @@ This repository contains core codes for our paper on “Phylogenetic comparative
    For automatic running, please go to PacBio_analysis_pipeline files. 
 
    For manual running, please go to PacBio_Analysis_scripts files. 
-   Using "python [name of the script] -h" to viewer the helpfile for each script.
+   Using "python [name of the script] -h" to view the helpfile for each script.
 
-2.11
+2.Fig2
 
