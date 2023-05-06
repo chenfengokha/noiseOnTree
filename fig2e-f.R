@@ -408,3 +408,69 @@ raw.exp.fit <-
     test.fit.segment(raw.depth.exp.dist.list = raw.depth.euclidean.exp.dist.nocc,
                      depth.cut = 6,
                      test.psi = -3)
+###########################################################################
+##load data and plot
+library(segmented)
+##samp2
+cfraw <- readRDS("/mnt/data/home/lzz/project/2019-8-22-PacBio.SampleA/results/new_samples_include10x_adjust_results/rawBC/CF2/CF2_depth_euclidean_exp_dist_nocc.Rds")
+#sample1
+cfraw <- readRDS("~/project/293Tcelllineagetree/plot/sampleA_raw_exp_depth_euclidean_dist_nocc.Rds")
+
+aa1 <- cfraw$real.dist
+tt <- aa1 %>%
+  group_by(mrca,treeDist.asDepth) %>%
+  dplyr::summarize(me=mean(exp.dist))
+cor.test(tt$treeDist.asDepth,tt$me,method = "s")
+
+aa1$treeDist.asDepth[which(aa1$treeDist.asDepth>8)] <- 8
+
+ranexp <- mclapply(mc.cores = 60,1:nrow(aa1), function(x){
+  tmp <- aa1[x,]
+  ran <- sample(aa1$exp.dist,1000,replace = F)
+  ran1 <- ran[which(ran < mean(ran)+2*sd(ran))]
+  ran2 <- ran1[which(ran1 > mean(ran)-2*sd(ran))]
+  tmp$ran <- mean(ran2)
+  tmp
+  
+}) %>% rbind.fill() %>% group_by(mrca,treeDist.asDepth) %>% 
+  dplyr::summarize(expdis1=mean(ran)) %>% as.data.frame() %>%
+  group_by(treeDist.asDepth) %>%
+  dplyr::summarize(expdis2=median(expdis1),n=length(expdis1)) %>%
+  as.data.frame()
+
+aa1$randis <- ranexp$expdis2[match(aa1$treeDist.asDepth,ranexp$treeDist.asDepth)]
+aa1$nor.exp <-aa1$exp.dist/aa1$randis
+
+aa <- aa1 %>% group_by(treeDist.asDepth,mrca) %>%
+  dplyr::summarize(expdis1=mean(nor.exp)) %>%
+  group_by(treeDist.asDepth) %>%
+  #dplyr::summarize(expdis2=median(expdis1),n=length(expdis1)) %>%
+  dplyr::summarize(expdis2=median(expdis1),n=length(expdis1)) %>%
+  as.data.frame()
+treedepth <- aa$treeDist.asDepth
+me <- aa$expdis2
+o <-lm(me~1)
+xx <- -treedepth
+o2 <- segmented(o,seg.Z=~xx,psi=list(xx=-5))
+t1 <- summary(o2)
+
+my.fitted <- fitted(o2)
+my.model <- data.frame(stringsAsFactors = F,Distance = sort(c(1,2,-(as.data.frame(t1$psi)[1,2]),3,4,5,6,8)), Elevation = c(my.fitted),max(as.vector(my.fitted)))
+
+aa2 <- aa1 %>% group_by(treeDist.asDepth,mrca) %>%
+  dplyr::summarize(expdis1=mean(nor.exp)) %>%
+  as.data.frame()
+
+source("~/Rfunction/style.print.R")
+
+ggplot()+
+  geom_violin(data=aa2,aes(treeDist.asDepth,expdis1,group=treeDist.asDepth),scale="width",adjust=0.5,trim=F) +
+  geom_boxplot(data=aa2,aes(treeDist.asDepth,expdis1,group=treeDist.asDepth),width = 0.1, outlier.colour = NA) +
+  stat_summary(data=aa2,aes(treeDist.asDepth,expdis1,group=treeDist.asDepth),fun = 'mean', geom = 'point', shape = 18, colour = 'grey')+
+  geom_point(data=my.model,aes(Distance,Elevation,color="real",group="1"))+
+  geom_line(data=my.model,aes(Distance,Elevation,color="real",group="1"))+
+  scale_y_continuous(limits = c(0.4,2.8),breaks = c(0.5,1.5,2.5))+
+  #scale_y_continuous(limits = c(0,1.6),breaks = c(0.2,0.8,1.4))+
+  scale_x_continuous(breaks = 1:8)+
+  labs(x="Estimated divergence time (depth)",y="Averaged pairwsie expression difference \n between single-cell leaves of a sub-tree")+
+  style.print()
