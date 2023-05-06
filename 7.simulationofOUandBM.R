@@ -205,8 +205,8 @@ simulateOU_BW_Sat <- mclapply(mc.cores = 15,1:nrow(tmpalthe),function(i){
 }) %>% rbind.fill() %>% as.data.frame()
 
 save(simulateOU_BW_Sat,file="~/project/293Tcelllineagetree/rev/res.simulateOU_BW_Sat.V2.1000.Rdata")
-
-# 
+###############################################################
+## load data and plot
 load("~/project/293Tcelllineagetree/rev/res.simulateOU_BW_Sat.V2.1000.Rdata")
 
 simulateOU_BW_Sat$type <- factor(simulateOU_BW_Sat$type,levels = c("OU","Brownian"))
